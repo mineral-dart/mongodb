@@ -1,25 +1,35 @@
 import 'dart:mirrors';
 
 import 'package:mineral_ioc/ioc.dart';
+import 'package:mineral_mongodb/mineral_mongodb.dart';
 import 'package:mineral_mongodb/src/exceptions/schema_exception.dart';
 import 'package:mineral_mongodb/src/mongodb.dart';
 import 'package:mongo_dart/mongo_dart.dart';
 
-class Schema<T> {
+class Schema<T extends Schema<T>> {
   late String id;
 
   static DbCollection query<T> () {
+    _hasSchema<T>();
     final MongoDB mongoDB = ioc.singleton(MongoDB.namespace);
     return mongoDB.connection.database.collection(T.toString().toLowerCase());
   }
 
   static Future<bool> dropCollection<T> () async {
-    return await query<T>().db.dropCollection(T.toString());
+    return await query<T>().drop();
+  }
+
+  static Future<dynamic> drop () async {
+    final MongoDB mongoDB = ioc.singleton(MongoDB.namespace);
+    await mongoDB.connection.database.drop();
+  }
+
+  static Future<bool> clear<T> () async {
+    final result = await query<T>().deleteMany(where.exists('_id'));
+    return result.success;
   }
 
   static Future<List<T>> all<T> () async {
-    _hasSchema<T>();
-
     final reflected = reflectClass(T);
     final rows = query<T>().find();
 
@@ -41,8 +51,6 @@ class Schema<T> {
   }
 
   static Future<T?> findBy<T> (String column, dynamic value) async {
-    _hasSchema<T>();
-
     final reflected = reflectClass(T);
     final row = await query<T>().findOne(where.eq(column == 'id' ? '_$column' : column, value));
 
@@ -63,13 +71,10 @@ class Schema<T> {
   }
 
   static Future<T?> find<T> (dynamic value) async {
-    _hasSchema<T>();
     return await findBy<T>('id', value);
   }
 
   static Future<T> create<T> (void Function(T schema) schema) async {
-    _hasSchema<T>();
-
     final reflected = reflectClass(T);
     final classMirror = reflected.newInstance(Symbol(''), []);
 

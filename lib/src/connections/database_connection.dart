@@ -1,17 +1,17 @@
-import 'package:mineral_mongodb/mineral_mongodb.dart';
 import 'package:mongo_dart/mongo_dart.dart';
 
-abstract class DatabaseConnection {
-  final Uri _uri;
-  final MongoDBAuth? _auth;
+class DatabaseConnection {
+  final String _uri;
   late final Db database;
 
-  DatabaseConnection(this._uri, this._auth);
+  DatabaseConnection(this._uri);
 
-  Uri get uri => _uri;
-  MongoDBAuth? get auth => _auth;
+  String get uri => _uri;
 
-  Future<void> open ();
+  Future<void> open () async {
+    database = await Db.create(_uri);
+    await database.open(secure: false);
+  }
 
   DbCollection collection (String name) {
     return database.collection(name);

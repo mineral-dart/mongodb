@@ -1,6 +1,5 @@
 import 'package:mineral_ioc/ioc.dart';
 import 'package:mineral_mongodb/mineral_mongodb.dart';
-import 'package:mineral_mongodb/src/entities/schema.dart';
 import 'package:mongo_dart/mongo_dart.dart';
 import 'package:test/test.dart';
 
@@ -9,13 +8,9 @@ class Foo extends Schema<Foo> {
 }
 
 void main() {
+  final endpoint = 'mongodb://127.0.0.1/mongodb';
   final mongodb = MongoDB()
-    ..local(Uri(
-      host: '127.0.0.1',
-      port: 27017,
-      scheme: 'mongodb',
-      path: 'mongodb',
-    ));
+    ..testing(endpoint);
 
   test('can registered into mineral ioc', () {
     ioc.bind(namespace: MongoDB.namespace, service: mongodb);

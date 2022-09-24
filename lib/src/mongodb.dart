@@ -1,9 +1,7 @@
 import 'dart:io';
 
 import 'package:mineral_ioc/ioc.dart';
-import 'package:mineral_mongodb/mineral_mongodb.dart';
 import 'package:mineral_mongodb/src/connections/database_connection.dart';
-import 'package:mineral_mongodb/src/connections/local_connection.dart';
 
 class MongoDB {
   final String label = 'MongoDB';
@@ -14,22 +12,13 @@ class MongoDB {
   Future<void> init () async {
     final environment = ioc.singleton(Service.environment);
 
-    local(Uri(
-      host: environment.get('MONGODB_HOST') ?? '127.0.0.1',
-      port: environment.get('MONGODB_PORT') != null
-        ? int.parse(environment.get('MONGODB_PORT'))
-        : 27017,
-      scheme: 'mongodb',
-      path: environment.get('MONGODB_DATABASE'),
-    ));
+    connection = DatabaseConnection(environment.get('MONGODB_URL'));
 
     await open();
-
-    print(environment.get('MONGODB_HOST'));
   }
 
-  void local (Uri uri, { MongoDBAuth? auth }) {
-    connection = LocalConnection(uri, null);
+  void testing (String uri) {
+    connection = DatabaseConnection(uri);
   }
 
   Future<void> open () async {
