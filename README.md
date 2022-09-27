@@ -4,7 +4,7 @@ The mongoDB module was designed exclusively for the Mineral framework, it allows
 database.
 
 Register the module #
-After installing the module, please register it within ./src/main.dart following the scheme below :
+After installing the module, please register it within `./src/main.dart` following the scheme below
 
 ```dart
 import 'package:mineral_mongodb/mineral_mongodb.dart';

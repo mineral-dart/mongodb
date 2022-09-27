@@ -1,6 +1,8 @@
 name: mineral_mongodb
-description: A sample command-line application.
+description: The mongoDB module was designed exclusively for the Mineral framework, it allows you to communicate with a MongoDB database.
 version: 1.0.0
+
+repository: https://github.com/mineral-dart/mongodb
 # homepage: https://www.example.com
 
 environment:
