@@ -3,7 +3,7 @@
 The mongoDB module was designed exclusively for the Mineral framework, it allows you to communicate with a MongoDB
 database.
 
-Register the module #
+## Register the module
 After installing the module, please register it within `./src/main.dart` following the scheme below
 
 ```dart
