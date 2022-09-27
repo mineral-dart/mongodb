@@ -9,26 +9,67 @@ import 'package:mongo_dart/mongo_dart.dart';
 class Schema<T extends Schema<T>> {
   late String id;
 
+  /// Access point to mongodb's native query builder as [DbCollection]
+  /// ```dart
+  /// class Model {
+  ///   late String username;
+  ///   late int age;
+  /// }
+  ///
+  /// final DbCollection = Schema.query<Model>();
+  /// ```
   static DbCollection query<T> () {
     _hasSchema<T>();
     final MongoDB mongoDB = ioc.singleton(MongoDB.namespace);
     return mongoDB.connection.database.collection(T.toString().toLowerCase());
   }
 
+  /// Delete the current collection
+  /// ```dart
+  /// class Model {
+  ///   late String username;
+  ///   late int age;
+  /// }
+  ///
+  /// await Schema.dropCollection<Model>();
+  /// ```
   static Future<bool> dropCollection<T> () async {
     return await query<T>().drop();
   }
 
+  /// Delete the database
+  /// ```dart
+  /// await Schema.drop();
+  /// ```
+  /// The action requires special permission to operate.
   static Future<dynamic> drop () async {
     final MongoDB mongoDB = ioc.singleton(MongoDB.namespace);
     await mongoDB.connection.database.drop();
   }
 
+  /// Empty the entire current collection
+  /// ```dart
+  /// class Model {
+  ///   late String username;
+  ///   late int age;
+  /// }
+  ///
+  /// await Schema.clear<Model>();
+  /// ```
   static Future<bool> clear<T> () async {
     final result = await query<T>().deleteMany(where.exists('_id'));
     return result.success;
   }
 
+  /// Get the whole data of the current schema
+  /// ```dart
+  /// class Model {
+  ///   late String username;
+  ///   late int age;
+  /// }
+  ///
+  /// final List<Model> models = await Schema.all<Model>();
+  /// ```
   static Future<List<T>> all<T> () async {
     final reflected = reflectClass(T);
     final rows = query<T>().find();
@@ -50,6 +91,15 @@ class Schema<T extends Schema<T>> {
     return results;
   }
 
+  /// Retrieves the first item found according to a [column] and a [value]
+  /// ```dart
+  /// class Model {
+  ///   late String username;
+  ///   late int age;
+  /// }
+  ///
+  /// final Model? models = await Schema.findBy<Model>('username', 'Freeze');
+  /// ```
   static Future<T?> findBy<T> (String column, dynamic value) async {
     final reflected = reflectClass(T);
     final row = await query<T>().findOne(where.eq(column == 'id' ? '_$column' : column, value));
@@ -70,10 +120,31 @@ class Schema<T extends Schema<T>> {
     return instance.reflectee;
   }
 
+  /// Retrieves the first item found according to the _id column from a [value]
+  /// ```dart
+  /// class Model {
+  ///   late String username;
+  ///   late int age;
+  /// }
+  ///
+  /// final Model? models = await Schema.find<Model>('81153671-1af6-4ba5-89aa-e36f94a86748');
+  /// ```
   static Future<T?> find<T> (dynamic value) async {
     return await findBy<T>('id', value);
   }
 
+  /// Created a new entry in the current collection
+  /// ```dart
+  /// class Model {
+  ///   late String username;
+  ///   late int age;
+  /// }
+  ///
+  /// final Model? model = await Schema.create<Model>((model) {
+  ///   model.username: 'Freeze',
+  ///   model.age: 25,
+  /// }));
+  /// ```
   static Future<T> create<T> (void Function(T schema) schema) async {
     final reflected = reflectClass(T);
     final classMirror = reflected.newInstance(Symbol(''), []);
@@ -101,6 +172,18 @@ class Schema<T extends Schema<T>> {
     return classMirror.reflectee;
   }
 
+  /// Created several new entries in the current collection
+  /// ```dart
+  /// class Model {
+  ///   late String username;
+  ///   late int age;
+  /// }
+  ///
+  /// final List<Model> models = await Schema.createMany<Model>([
+  ///   (model) => model.username: 'Freeze',
+  ///   (model) => model.username: 'John',
+  /// ]);
+  /// ```
   static Future<List<T>> createMany<T> (List<void Function(T schema)> schemas) async {
     List<T> results = [];
     for (final schema in schemas) {
@@ -112,6 +195,18 @@ class Schema<T extends Schema<T>> {
   }
 
 
+  /// Update a current entry in the current collection
+  /// ```dart
+  /// class Model {
+  ///   late String username;
+  ///   late int age;
+  /// }
+  ///
+  /// final Model? model = await Schema.find<Model>('...');
+  /// await model.update<Model>((model) {
+  ///   model.username = 'John Doe'
+  /// });
+  /// ```
   Future<T> update (void Function(T schema) schema) async {
     final reflected = reflect(this);
     schema(this as T);
@@ -135,6 +230,11 @@ class Schema<T extends Schema<T>> {
     await query<T>().deleteOne(where.eq('_id', id));
   }
 
+  /// Convert this to json object
+  /// ```dart
+  /// final Model? model = await Schema.find<Model>('...');
+  /// print(model?.toJson());
+  /// ```
   Object toJson () {
     Map<String, dynamic> fields = {};
 
@@ -152,6 +252,7 @@ class Schema<T extends Schema<T>> {
     return fields;
   }
 
+  /// @nodoc
   static void _hasSchema<T> () {
     if (T.toString() == 'dynamic') {
       throw SchemaException('The mongodb schema cannot be found, please provide it');
