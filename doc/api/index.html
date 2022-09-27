@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="generator" content="made with love by dartdoc 6.0.0">
+  <meta name="description" content="mineral_mongodb API docs, for the Dart programming language.">
+  <title>mineral_mongodb - Dart API docs</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  
+  <link rel="stylesheet" href="static-assets/github.css?v1">
+  <link rel="stylesheet" href="static-assets/styles.css?v1">
+  <link rel="icon" href="static-assets/favicon.png?v1">
+
+  
+</head>
+
+
+<body data-base-href="" data-using-base-href="false">
+
+<div id="overlay-under-drawer"></div>
+
+<header id="title">
+  <button id="sidenav-left-toggle" type="button">&nbsp;</button>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li class="self-crumb">mineral_mongodb package</li>
+  </ol>
+  <div class="self-name">mineral_mongodb</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+
+<main>
+
+
+  <div id="dartdoc-main-content" class="main-content">
+      
+<section class="desc markdown">
+  <h1 id="-mongodb">📦 MongoDB</h1>
+<p>The mongoDB module was designed exclusively for the Mineral framework, it allows you to communicate with a MongoDB
+database.</p>
+<p>Register the module #
+After installing the module, please register it within ./src/main.dart following the scheme below :</p>
+<pre class="language-dart"><code class="language-dart">import 'package:mineral_mongodb/mineral_mongodb.dart';
+
+Future&lt;void&gt; main() async {
+  final mongoDB = MongoDB();
+
+  Kernel kernel = Kernel()
+    ..intents.defined(all: true)
+    ..plugins.use([mongoDB]);
+
+  await kernel.init();
+}
+</code></pre>
+<h2 id="usage">Usage</h2>
+<p>Like a classic use of MongoDB technology, the Mineral framework requires you to use Models representing your noSQL schema.</p>
+<p>We will create our first model :</p>
+<pre class="language-dart"><code class="language-dart">class Foo {
+  late String username;
+  late int age;
+}
+</code></pre>
+<h3 id="create-all-foo">Create all foo</h3>
+<pre class="language-dart"><code class="language-dart">import 'package:mineral_mongodb/mineral_mongodb.dart';
+
+final List&lt;Foo&gt; foo = await Schema.all&lt;Foo&gt;();
+</code></pre>
+<h3 id="find-one-foo">Find one foo</h3>
+<pre class="language-dart"><code class="language-dart">import 'package:mineral_mongodb/mineral_mongodb.dart';
+
+final Foo? foo = await Schema.find&lt;Foo&gt;('.....');
+</code></pre>
+<h3 id="find-one-foo-from-defined-column">Find one foo from defined column</h3>
+<pre class="language-dart"><code class="language-dart">import 'package:mineral_mongodb/mineral_mongodb.dart';
+
+final Foo? foo = await Schema.findBy&lt;Foo&gt;('username', 'John Doe');
+</code></pre>
+<h3 id="create-one-foo">Create one foo</h3>
+<pre class="language-dart"><code class="language-dart">import 'package:mineral_mongodb/mineral_mongodb.dart';
+
+final Foo? foo = await Schema.create&lt;Foo&gt;((schema) {
+  schema.username = 'John Doe',
+  schema.age = 25,
+});
+</code></pre>
+<h3 id="create-many-foo">Create many foo</h3>
+<pre class="language-dart"><code class="language-dart">import 'package:mineral_mongodb/mineral_mongodb.dart';
+
+final List&lt;Foo&gt; foo = await Schema.createMany&lt;Foo&gt;([
+  (model) =&gt; model.username: 'Freeze',
+  (model) =&gt; model.username: 'John',
+]);
+</code></pre>
+<h3 id="update-one-foo">Update one foo</h3>
+<pre class="language-dart"><code class="language-dart">import 'package:mineral_mongodb/mineral_mongodb.dart';
+
+final Foo? foo = Schema.find&lt;Foo&gt;('...');
+
+await foo?.update((schema) {
+  schema.username = 'John Doe',
+  schema.age = 25,
+});
+</code></pre>
+<h3 id="delete-one-foo">Delete one foo</h3>
+<pre class="language-dart"><code class="language-dart">import 'package:mineral_mongodb/mineral_mongodb.dart';
+
+final Foo? foo = Schema.find&lt;Foo&gt;('...');
+await foo?.delete();
+</code></pre>
+<h3 id="access-to-mongodb-query-builder">Access to mongodb query builder</h3>
+<pre class="language-dart"><code class="language-dart">import 'package:mineral_mongodb/mineral_mongodb.dart';
+
+final DbCollection? fooCollection = Schema.query&lt;Foo&gt;();
+</code></pre>
+</section>
+
+
+      <section class="summary">
+          <h2>Libraries</h2>
+        <dl>
+          <dt id="mineral_mongodb">
+  <span class="name"><a href="mineral_mongodb/mineral_mongodb-library.html">mineral_mongodb</a></span> 
+
+</dt>
+<dd>
+</dd>
+
+        </dl>
+      </section>
+
+  </div> <!-- /.main-content -->
+
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+  <li class="self-crumb">mineral_mongodb package</li>
+</ol>
+
+
+    <h5 class="hidden-xs"><span class="package-name">mineral_mongodb</span> <span class="package-kind">package</span></h5>
+    <ol>
+      <li class="section-title">Libraries</li>
+      <li><a href="mineral_mongodb/mineral_mongodb-library.html">mineral_mongodb</a></li>
+</ol>
+
+  </div>
+
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div>
+
+</main>
+
+<footer>
+  <span class="no-break">
+    mineral_mongodb
+      1.0.0
+  </span>
+
+  
+</footer>
+
+
+
+<script src="static-assets/highlight.pack.js?v1"></script>
+<script src="static-assets/docs.dart.js"></script>
+
+
+
+</body>
+
+</html>
+
