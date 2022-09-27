@@ -1,6 +1,5 @@
 import 'package:mineral_ioc/ioc.dart';
 import 'package:mineral_mongodb/mineral_mongodb.dart';
-import 'package:mongo_dart/mongo_dart.dart';
 import 'package:test/test.dart';
 
 class Foo extends Schema<Foo> {
@@ -8,7 +7,7 @@ class Foo extends Schema<Foo> {
 }
 
 void main() {
-  final endpoint = 'mongodb://127.0.0.1/mongodb';
+  final endpoint = 'mongodb+srv://root:root@cluster0.dp9zo6r.mongodb.net/?retryWrites=true&w=majority';
   final mongodb = MongoDB()
     ..testing(endpoint);
 
@@ -22,28 +21,37 @@ void main() {
     expect(mongodb.connection.database.state, equals(State.OPEN));
   });
 
-  test('can get all', () async {
-    final foo = await Schema.all<Foo>();
-    expect(foo.length, equals(0));
-  });
+  group('description', () {
+    late final Foo foo;
 
-  test('can create one element', () async {
-    final foo = await Schema.create<Foo>((schema) {
-        schema.bar = 'bar';
+    test('can get all', () async {
+      final foo = await Schema.all<Foo>();
+      expect(foo.length, equals(0));
     });
 
-    final result = await Schema.all<Foo>();
+    test('can create one element', () async {
+      foo = await Schema.create<Foo>((schema) {
+        schema.bar = 'bar';
+      });
 
-    expect(foo.runtimeType, equals(Foo));
-    expect(result.length, equals(1));
-  });
+      expect(foo, isNotNull);
+      expect(foo.runtimeType, equals(Foo));
+      expect(foo.bar, 'bar');
+    });
 
-  test('can create many elements', () async {
-    final tests = await Schema.createMany<Foo>([
-      (schema) => schema.bar = 'Bar1',
-      (schema) => schema.bar = 'Bar2'
-    ]);
+    test('can create many elements', () async {
+      final results = await Schema.createMany<Foo>([
+        (schema) => schema.bar = 'Bar1',
+        (schema) => schema.bar = 'Bar2'
+      ]);
 
-    expect(tests.length, equals(2));
+      expect(results, isNotNull);
+      expect(results.runtimeType, equals(List<Foo>));
+      expect(results.length, equals(2));
+    });
+
+    tearDownAll (() async {
+      await Schema.drop();
+    });
   });
 }

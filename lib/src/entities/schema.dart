@@ -3,8 +3,6 @@ import 'dart:mirrors';
 import 'package:mineral_ioc/ioc.dart';
 import 'package:mineral_mongodb/mineral_mongodb.dart';
 import 'package:mineral_mongodb/src/exceptions/schema_exception.dart';
-import 'package:mineral_mongodb/src/mongodb.dart';
-import 'package:mongo_dart/mongo_dart.dart';
 
 class Schema<T extends Schema<T>> {
   late String id;
@@ -20,6 +18,7 @@ class Schema<T extends Schema<T>> {
   /// ```
   static DbCollection query<T> () {
     _hasSchema<T>();
+
     final MongoDB mongoDB = ioc.singleton(MongoDB.namespace);
     return mongoDB.connection.database.collection(T.toString().toLowerCase());
   }
@@ -34,6 +33,7 @@ class Schema<T extends Schema<T>> {
   /// await Schema.dropCollection<Model>();
   /// ```
   static Future<bool> dropCollection<T> () async {
+    _hasSchema<T>();
     return await query<T>().drop();
   }
 
@@ -42,7 +42,7 @@ class Schema<T extends Schema<T>> {
   /// await Schema.drop();
   /// ```
   /// The action requires special permission to operate.
-  static Future<dynamic> drop () async {
+  static Future<void> drop () async {
     final MongoDB mongoDB = ioc.singleton(MongoDB.namespace);
     await mongoDB.connection.database.drop();
   }
@@ -57,8 +57,10 @@ class Schema<T extends Schema<T>> {
   /// await Schema.clear<Model>();
   /// ```
   static Future<bool> clear<T> () async {
+    _hasSchema<T>();
+
     final result = await query<T>().deleteMany(where.exists('_id'));
-    return result.success;
+    return result.isSuccess;
   }
 
   /// Get the whole data of the current schema
@@ -71,6 +73,8 @@ class Schema<T extends Schema<T>> {
   /// final List<Model> models = await Schema.all<Model>();
   /// ```
   static Future<List<T>> all<T> () async {
+    _hasSchema<T>();
+
     final reflected = reflectClass(T);
     final rows = query<T>().find();
 
@@ -101,6 +105,8 @@ class Schema<T extends Schema<T>> {
   /// final Model? models = await Schema.findBy<Model>('username', 'Freeze');
   /// ```
   static Future<T?> findBy<T> (String column, dynamic value) async {
+    _hasSchema<T>();
+
     final reflected = reflectClass(T);
     final row = await query<T>().findOne(where.eq(column == 'id' ? '_$column' : column, value));
 
@@ -130,6 +136,7 @@ class Schema<T extends Schema<T>> {
   /// final Model? models = await Schema.find<Model>('81153671-1af6-4ba5-89aa-e36f94a86748');
   /// ```
   static Future<T?> find<T> (dynamic value) async {
+    _hasSchema<T>();
     return await findBy<T>('id', value);
   }
 
@@ -146,6 +153,8 @@ class Schema<T extends Schema<T>> {
   /// }));
   /// ```
   static Future<T> create<T> (void Function(T schema) schema) async {
+    _hasSchema<T>();
+
     final reflected = reflectClass(T);
     final classMirror = reflected.newInstance(Symbol(''), []);
 
@@ -185,6 +194,8 @@ class Schema<T extends Schema<T>> {
   /// ]);
   /// ```
   static Future<List<T>> createMany<T> (List<void Function(T schema)> schemas) async {
+    _hasSchema<T>();
+
     List<T> results = [];
     for (final schema in schemas) {
       final T result = await create(schema);
@@ -208,6 +219,8 @@ class Schema<T extends Schema<T>> {
   /// });
   /// ```
   Future<T> update (void Function(T schema) schema) async {
+    _hasSchema<T>();
+
     final reflected = reflect(this);
     schema(this as T);
 
@@ -227,6 +240,7 @@ class Schema<T extends Schema<T>> {
   }
 
   Future<void> delete () async {
+    _hasSchema<T>();
     await query<T>().deleteOne(where.eq('_id', id));
   }
 
