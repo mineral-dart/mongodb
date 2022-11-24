@@ -1,4 +1,3 @@
-import 'package:mineral_ioc/ioc.dart';
 import 'package:mineral_mongodb/mineral_mongodb.dart';
 import 'package:test/test.dart';
 
@@ -10,11 +9,6 @@ void main() {
   final endpoint = 'mongodb+srv://root:root@cluster0.dp9zo6r.mongodb.net/?retryWrites=true&w=majority';
   final mongodb = MongoDB()
     ..testing(endpoint);
-
-  test('can registered into mineral ioc', () {
-    ioc.bind(namespace: MongoDB.namespace, service: mongodb);
-    expect(ioc.singleton(MongoDB.namespace), equals(mongodb));
-  });
 
   test('can connect to database', () async {
     await mongodb.open();

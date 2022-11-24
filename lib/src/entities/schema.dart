@@ -4,12 +4,19 @@ import 'package:mineral_ioc/ioc.dart';
 import 'package:mineral_mongodb/mineral_mongodb.dart';
 import 'package:mineral_mongodb/src/exceptions/schema_exception.dart';
 
+typedef ItemCreator<S> = S Function();
+
 class Schema<T extends Schema<T>> {
   late String id;
 
+  static dynamic _getPluginManager () {
+    final dynamic pluginManager = ioc.services.entries.firstWhere((element) => element.key.toString() == 'PluginManagerCraft').value;
+    return pluginManager.use<MongoDB>();
+  }
+
   /// Access point to mongodb's native query builder as [DbCollection]
   /// ```dart
-  /// class Model {
+  /// class Model extends Schema<Model> {
   ///   late String username;
   ///   late int age;
   /// }
@@ -19,8 +26,7 @@ class Schema<T extends Schema<T>> {
   static DbCollection query<T> () {
     _hasSchema<T>();
 
-    final MongoDB mongoDB = ioc.singleton(MongoDB.namespace);
-    return mongoDB.connection.database.collection(T.toString().toLowerCase());
+    return _getPluginManager().connection.database.collection(T.toString().toLowerCase());
   }
 
   /// Delete the current collection
@@ -43,8 +49,7 @@ class Schema<T extends Schema<T>> {
   /// ```
   /// The action requires special permission to operate.
   static Future<void> drop () async {
-    final MongoDB mongoDB = ioc.singleton(MongoDB.namespace);
-    await mongoDB.connection.database.drop();
+    await _getPluginManager().connection.database.drop();
   }
 
   /// Empty the entire current collection
