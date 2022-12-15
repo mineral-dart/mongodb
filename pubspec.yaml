@@ -1,9 +1,14 @@
 name: mineral_mongodb
 description: The mongoDB module was designed exclusively for the Mineral framework, it allows you to communicate with a MongoDB database.
-version: 1.0.0
+version: 2.0.0
 
 repository: https://github.com/mineral-dart/mongodb
 # homepage: https://www.example.com
+
+platforms:
+  linux:
+  macos:
+  windows:
 
 environment:
   sdk: '>=2.17.1 <3.0.0'
@@ -16,6 +21,7 @@ dev_dependencies:
   test: ^1.16.0
 
 dependencies:
-  mineral_ioc: ^1.0.0
-  mongo_dart: ^0.7.4+1
-  uuid: ^3.0.6
+  mineral_environment: ^1.0.1
+  mineral_ioc: ^2.0.0
+  mineral_package: ^1.1.0
+  mongo_dart: ^0.8.2

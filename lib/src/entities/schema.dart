@@ -1,275 +1,50 @@
-import 'dart:mirrors';
-
 import 'package:mineral_ioc/ioc.dart';
 import 'package:mineral_mongodb/mineral_mongodb.dart';
-import 'package:mineral_mongodb/src/exceptions/schema_exception.dart';
+import 'package:mineral_mongodb/src/contracts/metadata_contract.dart';
+import 'package:mineral_mongodb/src/contracts/schema_contract.dart';
 
-class Schema<T extends Schema<T>> {
-  late String id;
+typedef ItemCreator<S> = S Function();
 
-  /// Access point to mongodb's native query builder as [DbCollection]
-  /// ```dart
-  /// class Model {
-  ///   late String username;
-  ///   late int age;
-  /// }
-  ///
-  /// final DbCollection = Schema.query<Model>();
-  /// ```
-  static DbCollection query<T> () {
-    _hasSchema<T>();
+class Metadata extends MetadataContract {
+  final Map<Symbol, dynamic> _payload = {};
 
-    final MongoDB mongoDB = ioc.singleton(MongoDB.namespace);
-    return mongoDB.connection.database.collection(T.toString().toLowerCase());
+  @override
+  dynamic get (String key) => _payload[Symbol(key)];
+
+  void put (String key, dynamic value) => _payload.putIfAbsent(Symbol(key), () => value);
+}
+
+class Schema<T> implements SchemaContract<T> {
+  final Metadata _metadata = Metadata();
+
+  @override
+  MetadataContract get payload => _metadata;
+
+  String get id => payload.get('_id');
+
+  static dynamic _getPluginManager () {
+    final dynamic pluginManager = ioc.services.entries.firstWhere((element) => element.key.toString() == 'PluginManagerCraft').value;
+    return pluginManager.use<MongoDB>();
   }
 
-  /// Delete the current collection
-  /// ```dart
-  /// class Model {
-  ///   late String username;
-  ///   late int age;
-  /// }
-  ///
-  /// await Schema.dropCollection<Model>();
-  /// ```
-  static Future<bool> dropCollection<T> () async {
-    _hasSchema<T>();
-    return await query<T>().drop();
+  DbCollection _query () {
+    return _getPluginManager().connection.database.collection(T.toString().toLowerCase().replaceAll('model', ''));
   }
 
-  /// Delete the database
-  /// ```dart
-  /// await Schema.drop();
-  /// ```
-  /// The action requires special permission to operate.
-  static Future<void> drop () async {
-    final MongoDB mongoDB = ioc.singleton(MongoDB.namespace);
-    await mongoDB.connection.database.drop();
-  }
+  @override
+  Future<T> update (Map<String, dynamic> values) async {
+    await _query().update(where.eq('_id', ObjectId.parse(id)), { 'bar': 'Miaou' }, writeConcern: WriteConcern(w: 0, wtimeout: 0, fsync: false, j: false));
 
-  /// Empty the entire current collection
-  /// ```dart
-  /// class Model {
-  ///   late String username;
-  ///   late int age;
-  /// }
-  ///
-  /// await Schema.clear<Model>();
-  /// ```
-  static Future<bool> clear<T> () async {
-    _hasSchema<T>();
-
-    final result = await query<T>().deleteMany(where.exists('_id'));
-    return result.isSuccess;
-  }
-
-  /// Get the whole data of the current schema
-  /// ```dart
-  /// class Model {
-  ///   late String username;
-  ///   late int age;
-  /// }
-  ///
-  /// final List<Model> models = await Schema.all<Model>();
-  /// ```
-  static Future<List<T>> all<T> () async {
-    _hasSchema<T>();
-
-    final reflected = reflectClass(T);
-    final rows = query<T>().find();
-
-    final List<T> results = [];
-    await for (final fields in rows) {
-      final instance = reflected.newInstance(Symbol(''), []);
-      for (final field in fields.entries) {
-        if (field.key == '_id') {
-          instance.setField(Symbol('id'), field.value);
-        } else {
-          instance.setField(Symbol(field.key), field.value);
-        }
-      }
-
-      results.add(instance.reflectee);
+    values.removeWhere((key, value) => key == 'id' || key == '_id');
+    for (final field in values.entries) {
+      _metadata._payload[Symbol(field.key)] = field.value;
     }
 
-    return results;
+    return this as T;
   }
 
-  /// Retrieves the first item found according to a [column] and a [value]
-  /// ```dart
-  /// class Model {
-  ///   late String username;
-  ///   late int age;
-  /// }
-  ///
-  /// final Model? models = await Schema.findBy<Model>('username', 'Freeze');
-  /// ```
-  static Future<T?> findBy<T> (String column, dynamic value) async {
-    _hasSchema<T>();
-
-    final reflected = reflectClass(T);
-    final row = await query<T>().findOne(where.eq(column == 'id' ? '_$column' : column, value));
-
-    if (row == null) {
-      return null;
-    }
-
-    final instance = reflected.newInstance(Symbol(''), []);
-    for (final field in row.entries) {
-      if (field.key == '_id') {
-        instance.setField(Symbol('id'), field.value);
-      } else {
-        instance.setField(Symbol(field.key), field.value);
-      }
-    }
-
-    return instance.reflectee;
-  }
-
-  /// Retrieves the first item found according to the _id column from a [value]
-  /// ```dart
-  /// class Model {
-  ///   late String username;
-  ///   late int age;
-  /// }
-  ///
-  /// final Model? models = await Schema.find<Model>('81153671-1af6-4ba5-89aa-e36f94a86748');
-  /// ```
-  static Future<T?> find<T> (dynamic value) async {
-    _hasSchema<T>();
-    return await findBy<T>('id', value);
-  }
-
-  /// Created a new entry in the current collection
-  /// ```dart
-  /// class Model {
-  ///   late String username;
-  ///   late int age;
-  /// }
-  ///
-  /// final Model? model = await Schema.create<Model>((model) {
-  ///   model.username: 'Freeze',
-  ///   model.age: 25,
-  /// }));
-  /// ```
-  static Future<T> create<T> (void Function(T schema) schema) async {
-    _hasSchema<T>();
-
-    final reflected = reflectClass(T);
-    final classMirror = reflected.newInstance(Symbol(''), []);
-
-    schema(classMirror.reflectee);
-
-    String uuid = Uuid().v4();
-    classMirror.reflectee.id = uuid;
-
-    final Map<String, dynamic> props = {};
-    props.putIfAbsent('_id', () => uuid);
-
-    for (final f in classMirror.type.declarations.entries) {
-      if (f.value is VariableMirror) {
-        final field = MirrorSystem.getName(f.value.simpleName);
-        try {
-          final value = classMirror.getField(f.key);
-          props.putIfAbsent(field, () => value.reflectee);
-        } catch (_) {}
-      }
-    }
-
-    await query<T>().insert(props);
-
-    return classMirror.reflectee;
-  }
-
-  /// Created several new entries in the current collection
-  /// ```dart
-  /// class Model {
-  ///   late String username;
-  ///   late int age;
-  /// }
-  ///
-  /// final List<Model> models = await Schema.createMany<Model>([
-  ///   (model) => model.username: 'Freeze',
-  ///   (model) => model.username: 'John',
-  /// ]);
-  /// ```
-  static Future<List<T>> createMany<T> (List<void Function(T schema)> schemas) async {
-    _hasSchema<T>();
-
-    List<T> results = [];
-    for (final schema in schemas) {
-      final T result = await create(schema);
-      results.add(result);
-    }
-
-    return results;
-  }
-
-
-  /// Update a current entry in the current collection
-  /// ```dart
-  /// class Model {
-  ///   late String username;
-  ///   late int age;
-  /// }
-  ///
-  /// final Model? model = await Schema.find<Model>('...');
-  /// await model.update<Model>((model) {
-  ///   model.username = 'John Doe'
-  /// });
-  /// ```
-  Future<T> update (void Function(T schema) schema) async {
-    _hasSchema<T>();
-
-    final reflected = reflect(this);
-    schema(this as T);
-
-    final Map<String, dynamic> props = {};
-    for (final f in reflected.type.declarations.entries) {
-      if (f.value is VariableMirror) {
-        final field = MirrorSystem.getName(f.value.simpleName);
-        try {
-          final value = reflected.getField(f.key);
-          props.putIfAbsent(field, () => value.reflectee);
-        } catch (_) {}
-      }
-    }
-
-    await query<T>().update(where.eq('_id', id), props);
-    return reflected.reflectee;
-  }
-
+  @override
   Future<void> delete () async {
-    _hasSchema<T>();
-    await query<T>().deleteOne(where.eq('_id', id));
-  }
-
-  /// Convert this to json object
-  /// ```dart
-  /// final Model? model = await Schema.find<Model>('...');
-  /// print(model?.toJson());
-  /// ```
-  Object toJson () {
-    Map<String, dynamic> fields = {};
-
-    final reflected = reflect(this);
-    for (final f in reflected.type.declarations.entries) {
-      if (f.value is VariableMirror) {
-        final field = MirrorSystem.getName(f.value.simpleName);
-        try {
-          final value = reflected.getField(f.key);
-          fields.putIfAbsent(field, () => value.reflectee);
-        } catch (_) {}
-      }
-    }
-
-    return fields;
-  }
-
-  /// @nodoc
-  static void _hasSchema<T> () {
-    if (T.toString() == 'dynamic') {
-      throw SchemaException('The mongodb schema cannot be found, please provide it');
-    }
+    await _query().deleteOne(where.eq('_id', ObjectId.parse(id)));
   }
 }
