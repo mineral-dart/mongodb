@@ -1,3 +1,9 @@
+## 2.0.0
+- Remove `dart:mirrors` library
+- Implement contracts
+- Create new mixin `Transaction` to use instanced models
+- Improve DX
+
 ## 1.1.0
 - Implement new package system
 
