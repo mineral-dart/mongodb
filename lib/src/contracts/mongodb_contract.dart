@@ -1,5 +1,5 @@
 import 'package:mineral_mongodb/mineral_mongodb.dart';
-import 'package:mineral_mongodb/src/entities/static_schema.dart';
+import 'package:mineral_mongodb/src/contracts/static_schema_contract.dart';
 
 typedef ModelFactory = Map<dynamic, Schema Function()>;
 
@@ -19,7 +19,7 @@ abstract class MongodbContract {
   ///   }
   /// }
   /// ```
-  StaticSchema<T> use<T extends Schema> ();
+  StaticSchemaContract<T> use<T extends Schema> ();
 
   /// Delete the database
   /// ```dart
