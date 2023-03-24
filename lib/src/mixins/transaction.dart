@@ -4,7 +4,7 @@ import 'package:mineral_mongodb/src/mongodb.dart';
 
 mixin Transaction {
   MongodbContract _getPlugin () {
-    final dynamic pluginManager = ioc.services.entries.firstWhere((element) => element.key.toString() == 'PluginManagerCraft').value;
+    final dynamic pluginManager = ioc.services.entries.firstWhere((element) => element.key.toString() == 'PluginServiceCraft').value;
     return pluginManager.use<MongoDB>();
   }
 
